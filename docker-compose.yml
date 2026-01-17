@@ -23,16 +23,12 @@ services:
     <<: *cassandra-common
     container_name: cassandra-3
 
-  # cassandra-4:
-  #   <<: *cassandra-common
-  #   container_name: cassandra-4
-
   cassandra-init:
     image: cassandra:latest
     container_name: cassandra-init
     volumes:
       - ./schema:/schema
-    entrypoint: ["/bin/bash", "cqlsh", "cassandra-1", "-f", "/schema/create_schema.cql"]
+    entrypoint: ["cqlsh", "cassandra-1", "-f", "/schema/create_schema.cql"]
     depends_on:
       cassandra-1:
         condition: service_healthy
@@ -40,6 +36,4 @@ services:
         condition: service_healthy
       cassandra-3:
         condition: service_healthy
-      # cassandra-4:
-      #   condition: service_healthy
       
