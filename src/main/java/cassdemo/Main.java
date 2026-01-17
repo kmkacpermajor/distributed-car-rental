@@ -12,6 +12,7 @@ import cassdemo.backend.BackendSession;
 import cassdemo.backend.RentalLog;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
@@ -37,6 +38,7 @@ public class Main {
 
         Terminal terminal = TerminalBuilder.builder().build();
         LineReader reader = LineReaderBuilder.builder()
+                .history(new DefaultHistory())
                 .terminal(terminal)
                 .build();
 

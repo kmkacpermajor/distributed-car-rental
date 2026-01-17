@@ -59,11 +59,11 @@ public class BackendSession {
 
 	private void prepareStatements() throws BackendException {
 		try {
-			MAKE_A_RESERVATION = session.prepare("INSERT INTO rentalLog (dateFrom, renterId, dateTo, carClass) VALUES (?,?,?,?)");
-			DELETE_RESERVATION = session.prepare("DELETE dateFrom, renterId, dateTo, carClass WHERE dateFrom = ? AND renterId = ?");
-			SELECT_TODAYS_CLIENTS_RENTALS = session.prepare("SELECT * FROM rentalLog WHERE dateFrom = ? AND WHERE renterId = ?");
+			MAKE_A_RESERVATION = session.prepare("INSERT INTO rentalLog (dateFrom, renterId, dateTo, carClass) VALUES (?, ?, ?, ?)");
+			DELETE_RESERVATION = session.prepare("DELETE FROM rentalLog WHERE dateFrom = ? AND renterId = ?");
+			SELECT_TODAYS_CLIENTS_RENTALS = session.prepare("SELECT * FROM rentalLog WHERE dateFrom = ? AND renterId = ?");
 			CHECK_CARS_RENTAL_ID = session.prepare("SELECT renterId FROM carRentals WHERE carId = ?");
-			TRY_RENTING_CAR = session.prepare("INSERT INTO carRentals (carId, renterId) VALUES (?, ?) IF renterId = null");
+			TRY_RENTING_CAR = session.prepare("UPDATE carRentals SET renterId = ? WHERE carId = ? IF renterId = null");
 			ADD_RENTAL_TO_HISTORY = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId) VALUES (?,?,?,?)");
 			RETURN_CAR = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, dateReceived) VALUES (?,?,?,?)");
 			SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
@@ -134,7 +134,7 @@ public class BackendSession {
 
 	public boolean rentCar(int carId, UUID renterId) throws BackendException{
 		BoundStatement bs = new BoundStatement(TRY_RENTING_CAR);
-		bs.bind(carId, renterId);
+		bs.bind(renterId, carId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
