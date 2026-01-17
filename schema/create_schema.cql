@@ -26,6 +26,18 @@ CREATE TABLE carHistory (
   PRIMARY KEY (carId, dateFrom, dateTo)
   );
 
+CREATE TABLE carDetails (
+    carId int PRIMARY KEY,
+    carName text,
+    carClass text,
+    licensePlate text
+);
+
+CREATE TABLE carClasses (
+    carClass text PRIMARY KEY,
+    carIdList list<int>
+);
+
 INSERT INTO carRentals (carId, renterId) VALUES (0, null);
 INSERT INTO carRentals (carId, renterId) VALUES (1, null);
 INSERT INTO carRentals (carId, renterId) VALUES (2, null);
@@ -129,3 +141,11 @@ INSERT INTO carDetails (carId, carName, carClass, licensePlate) VALUES (47, 'Fia
 INSERT INTO carDetails (carId, carName, carClass, licensePlate) VALUES (48, 'Lexus ES', 'E', 'PY 8810A');
 INSERT INTO carDetails (carId, carName, carClass, licensePlate) VALUES (49, 'Nissan Qashqai', 'F', 'PO 7720K');
 INSERT INTO carDetails (carId, carName, carClass, licensePlate) VALUES (50, 'Alfa Romeo Giulia', 'D', 'PZ 156AR');
+
+INSERT INTO carClasses (carClass, carIdList) VALUES ('A', [16, 47]);
+INSERT INTO carClasses (carClass, carIdList) VALUES ('B', [5, 13, 14, 22, 27, 30, 36, 44, 45]);
+INSERT INTO carClasses (carClass, carIdList) VALUES ('C', [0, 1, 4, 6, 9, 15, 23, 24, 25, 29, 31, 32, 35, 37, 40, 46]);
+INSERT INTO carClasses (carClass, carIdList) VALUES ('D', [2, 3, 7, 12, 19, 33, 34, 38, 43, 50]);
+INSERT INTO carClasses (carClass, carIdList) VALUES ('E', [17, 20, 48]);
+INSERT INTO carClasses (carClass, carIdList) VALUES ('F', [10, 11, 18, 21, 26, 41, 42, 49]);
+INSERT INTO carClasses (carClass, carIdList) VALUES ('S', [8, 28, 39]);
