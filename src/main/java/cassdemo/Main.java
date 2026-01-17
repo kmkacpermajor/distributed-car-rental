@@ -1,7 +1,9 @@
 package cassdemo;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Properties;
+import java.util.UUID;
 
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
@@ -45,13 +47,14 @@ public class Main {
             String command = parts[0];
 
             switch (command) {
-                case "s":
-                case "select":
-                    String tableName = parts[1];
-
-                    // potem np. session.select(tableName);
+                case "ret":
+                case "returnCar":
+                    if (parts.length != 5) {
+                        System.out.println("Invalid returnCar command. Usage: returnCar <carId> <dateOut> <dateReturned> <dateReturnedExpected>");
+                        break;
+                    }
+                    session.returnCar(Integer.getInteger(parts[1]), LocalDate.parse(parts[2]), LocalDate.parse(parts[3]), LocalDate.parse(parts[4]));
                     break;
-
                 default:
                     System.out.println("Unknown command: " + command);
             }
