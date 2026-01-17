@@ -2,11 +2,14 @@ package cassdemo;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
+import cassdemo.backend.RentalLog;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
@@ -47,6 +50,45 @@ public class Main {
             String command = parts[0];
 
             switch (command) {
+                case "addC":
+                case "addClient":
+                    UUID uuid = UUID.randomUUID();
+                    System.out.println("your uuid is: "+ uuid);
+                    break;
+                case "res":
+                case "reserve":
+                    if(parts.length<5){
+                        System.out.println("wrong input for reservation");
+                        break;
+                    }
+                    session.reserveRental(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), LocalDate.parse(parts[3]), parts[4]);
+                    break;
+                case "del":
+                case "deleteReservation":
+                    if(parts.length<5){
+                        System.out.println("wrong input for reservation");
+                        break;
+                    }
+                    session.deleteReservation(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), LocalDate.parse(parts[3]), parts[4]);
+                    break;
+                case "rentAll":
+                    if(parts.length<3){
+                        System.out.println("wrong input for reservation");
+                        break;
+                    }
+                    ArrayList<RentalLog> rentalLogs = session.selectRentals(LocalDate.parse(parts[1]), UUID.fromString(parts[2]));
+                    for (RentalLog rL : rentalLogs){
+                        List<Integer> toCheck = session.getCarIds(rL.getCarClass());
+                        for (Integer carId : toCheck){
+                            if(session.getCarsRenterId(carId)==null){
+                                if (session.rentCar(carId, UUID.fromString(parts[2]))){
+                                    break;
+                                }
+                            }
+                        }
+                        //todo more than one car class
+                    }
+                    break;
                 case "ret":
                 case "returnCar":
                     if (parts.length != 5) {
@@ -55,6 +97,7 @@ public class Main {
                     }
                     session.returnCar(Integer.getInteger(parts[1]), LocalDate.parse(parts[2]), LocalDate.parse(parts[3]), LocalDate.parse(parts[4]));
                     break;
+
                 default:
                     System.out.println("Unknown command: " + command);
             }

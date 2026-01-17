@@ -2,6 +2,7 @@ package cassdemo.backend;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -43,7 +44,6 @@ public class BackendSession {
 		}
 		prepareStatements();
 	}
-
 	private static PreparedStatement MAKE_A_RESERVATION;
 	private static PreparedStatement DELETE_RESERVATION;
 	private static PreparedStatement SELECT_TODAYS_CLIENTS_RENTALS;
@@ -51,6 +51,7 @@ public class BackendSession {
 	private static PreparedStatement TRY_RENTING_CAR;
 	private static PreparedStatement ADD_RENTAL_TO_HISTORY;
 	private static PreparedStatement RETURN_CAR;
+	private static PreparedStatement SELECT_ALL_CAR_IDS;
 
 //	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
 //	// private static final SimpleDateFormat df = new
@@ -62,9 +63,10 @@ public class BackendSession {
 			DELETE_RESERVATION = session.prepare("DELETE dateFrom, renterId, dateTo, carClass WHERE dateFrom = ? AND renterId = ?");
 			SELECT_TODAYS_CLIENTS_RENTALS = session.prepare("SELECT * FROM rentalLog WHERE dateFrom = ? AND WHERE renterId = ?");
 			CHECK_CARS_RENTAL_ID = session.prepare("SELECT renterId FROM carRentals WHERE carId = ?");
-			TRY_RENTING_CAR = session.prepare("INSERT INTO carRentals (carId, renterId) VALUES (?, ?)");
+			TRY_RENTING_CAR = session.prepare("INSERT INTO carRentals (carId, renterId) VALUES (?, ?) IF renterId = null");
 			ADD_RENTAL_TO_HISTORY = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId) VALUES (?,?,?,?)");
 			RETURN_CAR = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, dateReceived) VALUES (?,?,?,?)");
+			SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
@@ -130,7 +132,7 @@ public class BackendSession {
 		return rs.one().getUUID("renterId");
 	}
 
-	public void rentCar(int carId, UUID renterId) throws BackendException{
+	public boolean rentCar(int carId, UUID renterId) throws BackendException{
 		BoundStatement bs = new BoundStatement(TRY_RENTING_CAR);
 		bs.bind(carId, renterId);
 		ResultSet rs = null;
@@ -139,7 +141,7 @@ public class BackendSession {
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
-		logger.info("Renter Id: " + renterId + " inserted into car of carId: "+ carId + ".");
+		return rs.one().getBool("[applied]");
 	}
 
 	public void addRentalToHistory(int carId, LocalDate dateFrom, LocalDate dateTo, UUID renterId) throws BackendException{
@@ -166,6 +168,17 @@ public class BackendSession {
 		logger.info("Added dateReceived to log in rental history.");
 	}
 
+	public List<Integer> getCarIds(String carClass) throws BackendException{
+		BoundStatement bs = new BoundStatement(SELECT_ALL_CAR_IDS);
+		bs.bind(carClass);
+		ResultSet rs = null;
+		try {
+			rs = session.execute(bs);
+		}catch (Exception e){
+			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
+		}
+		return rs.one().getList("carIdList", Integer.class);
+	}
 
 	protected void finalize() {
 		try {
