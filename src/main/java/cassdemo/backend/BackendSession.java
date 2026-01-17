@@ -44,6 +44,8 @@ public class BackendSession {
 		prepareStatements();
 	}
 
+	private static PreparedStatement MAKE_A_RESERVATION;
+	private static PreparedStatement DELETE_RESERVATION;
 	private static PreparedStatement SELECT_TODAYS_CLIENTS_RENTALS;
 	private static PreparedStatement CHECK_CARS_RENTAL_ID;
 	private static PreparedStatement TRY_RENTING_CAR;
@@ -56,6 +58,8 @@ public class BackendSession {
 
 	private void prepareStatements() throws BackendException {
 		try {
+			MAKE_A_RESERVATION = session.prepare("INSERT INTO rentalLog (dateFrom, renterId, dateTo, carClass) VALUES (?,?,?,?)");
+			DELETE_RESERVATION = session.prepare("DELETE dateFrom, renterId, dateTo, carClass WHERE dateFrom = ? AND renterId = ?");
 			SELECT_TODAYS_CLIENTS_RENTALS = session.prepare("SELECT * FROM rentalLog WHERE dateFrom = ? AND WHERE renterId = ?");
 			CHECK_CARS_RENTAL_ID = session.prepare("SELECT renterId FROM carRentals WHERE carId = ?");
 			TRY_RENTING_CAR = session.prepare("INSERT INTO carRentals (carId, renterId) VALUES (?, ?)");
@@ -66,6 +70,30 @@ public class BackendSession {
 		}
 
 		logger.info("Statements prepared");
+	}
+
+	public void reserveRental(LocalDate dateFrom, UUID renterId, LocalDate dateTo, String carClass) throws BackendException{
+		BoundStatement bs = new BoundStatement(MAKE_A_RESERVATION);
+		bs.bind(dateFrom, renterId, dateTo, carClass);
+		ResultSet rs = null;
+		try{
+			rs = session.execute(bs);
+		} catch (Exception e){
+			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
+		}
+		logger.info("A new rental reservation has been made.");
+	}
+
+	public void deleteReservation(LocalDate dateFrom, UUID renterId, LocalDate dateTo, String carClass) throws BackendException{
+		BoundStatement bs = new BoundStatement(DELETE_RESERVATION);
+		bs.bind(dateFrom, renterId, dateTo, carClass);
+		ResultSet rs = null;
+		try{
+			rs = session.execute(bs);
+		} catch (Exception e){
+			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
+		}
+		logger.info("A new rental reservation has been deleted.");
 	}
 
 	public ArrayList<RentalLog> selectRentals(LocalDate dateFrom, UUID renterId) throws BackendException{
