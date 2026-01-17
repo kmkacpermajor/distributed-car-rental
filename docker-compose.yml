@@ -14,14 +14,20 @@ services:
   cassandra-1:
     <<: *cassandra-common
     container_name: cassandra-1
+    ports:
+      - 9042:9042
 
   cassandra-2:
     <<: *cassandra-common
     container_name: cassandra-2
+    ports:
+      - 9043:9042
 
   cassandra-3:
     <<: *cassandra-common
     container_name: cassandra-3
+    ports:
+      - 9044:9042
 
   cassandra-init:
     image: cassandra:latest
@@ -36,4 +42,3 @@ services:
         condition: service_healthy
       cassandra-3:
         condition: service_healthy
-      

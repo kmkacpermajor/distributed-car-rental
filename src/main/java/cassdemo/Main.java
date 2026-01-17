@@ -5,37 +5,56 @@ import java.util.Properties;
 
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 public class Main {
 
 	private static final String PROPERTIES_FILENAME = "config.properties";
 
-	public static void main(String[] args) throws IOException, BackendException {
-		String contactPoint = null;
-		String keyspace = null;
+    public static void main(String[] args) throws Exception {
+        String contactPoint = null;
+        String keyspace = null;
 
-		Properties properties = new Properties();
-		try {
-			properties.load(Main.class.getClassLoader().getResourceAsStream(PROPERTIES_FILENAME));
+        Properties properties = new Properties();
+        try {
+            properties.load(Main.class.getClassLoader().getResourceAsStream(PROPERTIES_FILENAME));
 
-			contactPoint = properties.getProperty("contact_point");
-			keyspace = properties.getProperty("keyspace");
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
-			
-		BackendSession session = new BackendSession(contactPoint, keyspace);
+            contactPoint = properties.getProperty("contact_point");
+            keyspace = properties.getProperty("keyspace");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
 
-		session.upsertUser("PP", "Adam", 609, "A St");
-		session.upsertUser("PP", "Ola", 509, null);
-		session.upsertUser("UAM", "Ewa", 720, "B St");
-		session.upsertUser("PP", "Kasia", 713, "C St");
+        BackendSession session = new BackendSession(contactPoint, keyspace);
 
-		String output = session.selectAll();
-		System.out.println("Users: \n" + output);
+        Terminal terminal = TerminalBuilder.builder().build();
+        LineReader reader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .build();
 
-		session.deleteAll();
+        String prompt = "dist-rental> ";
 
-		System.exit(0);
-	}
+        while (true) {
+            String line = reader.readLine(prompt);
+            if (line == null || line.equalsIgnoreCase("exit")) break;
+
+            String[] parts = line.split(" ");
+            String command = parts[0];
+
+            switch (command) {
+                case "s":
+                case "select":
+                    String tableName = parts[1];
+
+                    // potem np. session.select(tableName);
+                    break;
+
+                default:
+                    System.out.println("Unknown command: " + command);
+            }
+        }
+    }
 }
