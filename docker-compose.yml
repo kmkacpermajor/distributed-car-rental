@@ -1,0 +1,45 @@
+x-cassandra-common: &cassandra-common
+  image: cassandra:latest
+  environment:
+    - CASSANDRA_CLUSTER_NAME=DistributedCarRentalCluster
+    - CASSANDRA_SEEDS=cassandra-1,cassandra-2,cassandra-3
+    - MAX_HEAP_SIZE=2048M
+  healthcheck:
+    test: ["CMD-SHELL", "nodetool status"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+
+services:
+  cassandra-1:
+    <<: *cassandra-common
+    container_name: cassandra-1
+
+  cassandra-2:
+    <<: *cassandra-common
+    container_name: cassandra-2
+
+  cassandra-3:
+    <<: *cassandra-common
+    container_name: cassandra-3
+
+  # cassandra-4:
+  #   <<: *cassandra-common
+  #   container_name: cassandra-4
+
+  cassandra-init:
+    image: cassandra:latest
+    container_name: cassandra-init
+    volumes:
+      - ./schema:/schema
+    entrypoint: ["/bin/bash", "cqlsh", "cassandra-1", "-f", "/schema/create_schema.cql"]
+    depends_on:
+      cassandra-1:
+        condition: service_healthy
+      cassandra-2:
+        condition: service_healthy
+      cassandra-3:
+        condition: service_healthy
+      # cassandra-4:
+      #   condition: service_healthy
+      
