@@ -1,0 +1,9 @@
+109  INFO  com.datastax.driver.core: DataStax Java driver 3.11.3 for Apache Cassandra
+113  INFO  c.d.driver.core.GuavaCompatibility: Detected Guava >= 19 in the classpath, using modern compatibility layer
+190  INFO  c.datastax.driver.core.ClockFactory: Using native clock to generate timestamps.
+233  INFO  com.datastax.driver.core.NettyUtil: Found Netty's native epoll transport in the classpath, using it
+385  INFO  c.d.d.c.p.DCAwareRoundRobinPolicy: Using data-center name 'datacenter1' for DCAwareRoundRobinPolicy (if this is incorrect, please provide the correct datacenter name with DCAwareRoundRobinPolicy constructor)
+385  INFO  com.datastax.driver.core.Cluster: New Cassandra host /127.0.0.1:9042 added
+386  INFO  com.datastax.driver.core.Cluster: New Cassandra host /172.19.0.4:9042 added
+386  INFO  com.datastax.driver.core.Cluster: New Cassandra host /172.19.0.2:9042 added
+411  INFO  cassdemo.backend.BackendSession: Statements prepared

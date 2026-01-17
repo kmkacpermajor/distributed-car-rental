@@ -56,5 +56,7 @@ public class Main {
                     System.out.println("Unknown command: " + command);
             }
         }
+
+        System.exit(0);
     }
 }
