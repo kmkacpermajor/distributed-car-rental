@@ -26,8 +26,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'ch.qos.logback:logback-classic:1.4.12'
 
-    implementation 'com.datastax.cassandra:cassandra-driver-core:3.11.3'
-    implementation 'org.apache.cassandra:cassandra-all:3.11.16'
+    implementation 'com.datastax.oss:java-driver-core:4.17.0'
 
     // JLine 3 for the Shell
     implementation 'org.jline:jline:3.25.1'

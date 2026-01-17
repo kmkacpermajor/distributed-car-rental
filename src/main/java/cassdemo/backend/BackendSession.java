@@ -1,19 +1,19 @@
 package cassdemo.backend;
 
+import java.net.InetSocketAddress;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 
 /*
  * For error handling done right see: 
@@ -30,15 +30,16 @@ public class BackendSession {
 
 	private static final Logger logger = LoggerFactory.getLogger(BackendSession.class);
 
-	public static BackendSession instance = null;
+	private CqlSession session;
 
-	private Session session;
+	public BackendSession(String contactPointIP, String keyspace) throws BackendException {
 
-	public BackendSession(String contactPoint, String keyspace) throws BackendException {
-
-		Cluster cluster = Cluster.builder().addContactPoint(contactPoint).build();
 		try {
-			session = cluster.connect(keyspace);
+			session = CqlSession.builder()
+                    .addContactPoint(new InetSocketAddress(contactPointIP, 9042))
+                    .withKeyspace(keyspace)
+                    .withLocalDatacenter("datacenter1")
+                    .build();
 		} catch (Exception e) {
 			throw new BackendException("Could not connect to the cluster. " + e.getMessage() + ".", e);
 		}
@@ -75,11 +76,9 @@ public class BackendSession {
 	}
 
 	public void reserveRental(LocalDate dateFrom, UUID renterId, LocalDate dateTo, String carClass) throws BackendException{
-		BoundStatement bs = new BoundStatement(MAKE_A_RESERVATION);
-		bs.bind(dateFrom, renterId, dateTo, carClass);
-		ResultSet rs = null;
+		BoundStatement bs = MAKE_A_RESERVATION.bind(dateFrom, renterId, dateTo, carClass);
 		try{
-			rs = session.execute(bs);
+            session.execute(bs);
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
@@ -87,11 +86,9 @@ public class BackendSession {
 	}
 
 	public void deleteReservation(LocalDate dateFrom, UUID renterId, LocalDate dateTo, String carClass) throws BackendException{
-		BoundStatement bs = new BoundStatement(DELETE_RESERVATION);
-		bs.bind(dateFrom, renterId, dateTo, carClass);
-		ResultSet rs = null;
+		BoundStatement bs = DELETE_RESERVATION.bind(dateFrom, renterId, dateTo, carClass);
 		try{
-			rs = session.execute(bs);
+			session.execute(bs);
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
@@ -99,8 +96,7 @@ public class BackendSession {
 	}
 
 	public ArrayList<RentalLog> selectRentals(LocalDate dateFrom, UUID renterId) throws BackendException{
-		BoundStatement bs = new BoundStatement(SELECT_TODAYS_CLIENTS_RENTALS);
-		bs.bind(dateFrom, renterId);
+		BoundStatement bs = SELECT_TODAYS_CLIENTS_RENTALS.bind(dateFrom, renterId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
@@ -111,7 +107,7 @@ public class BackendSession {
 		for (Row row : rs){
 			RentalLog rentalLog = new RentalLog.Builder()
 					.dateFrom(LocalDate.parse(row.getString("dateFrom")))
-					.renterId(row.getUUID("renterId"))
+					.renterId(row.get("renterId", UUID.class))
 					.dateTo(LocalDate.parse(row.getString("dateTo")))
 					.carClass(row.getString("carClass"))
 					.build();
@@ -121,20 +117,18 @@ public class BackendSession {
 	}
 
 	public UUID getCarsRenterId(int carId) throws BackendException{
-		BoundStatement bs = new BoundStatement(CHECK_CARS_RENTAL_ID);
-		bs.bind(carId);
+		BoundStatement bs = CHECK_CARS_RENTAL_ID.bind(carId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
-		return rs.one().getUUID("renterId");
+		return rs.one().get("renterId", UUID.class);
 	}
 
 	public boolean rentCar(int carId, UUID renterId) throws BackendException{
-		BoundStatement bs = new BoundStatement(TRY_RENTING_CAR);
-		bs.bind(renterId, carId);
+		BoundStatement bs = TRY_RENTING_CAR.bind(renterId, carId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
@@ -145,8 +139,7 @@ public class BackendSession {
 	}
 
 	public void addRentalToHistory(int carId, LocalDate dateFrom, LocalDate dateTo, UUID renterId) throws BackendException{
-		BoundStatement bs = new BoundStatement(ADD_RENTAL_TO_HISTORY);
-		bs.bind(carId, dateFrom, dateTo, renterId);
+		BoundStatement bs = ADD_RENTAL_TO_HISTORY.bind(carId, dateFrom, dateTo, renterId);
 		ResultSet rs = null;
 		try {
 			rs = session.execute(bs);
@@ -157,8 +150,7 @@ public class BackendSession {
 	}
 
 	public void returnCar(int carId, LocalDate dateFrom, LocalDate dateTo, LocalDate dateReceived) throws BackendException{
-		BoundStatement bs = new BoundStatement(RETURN_CAR);
-		bs.bind(carId, dateFrom, dateTo, dateReceived);
+		BoundStatement bs = RETURN_CAR.bind(carId, dateFrom, dateTo, dateReceived);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
@@ -169,8 +161,7 @@ public class BackendSession {
 	}
 
 	public List<Integer> getCarIds(String carClass) throws BackendException{
-		BoundStatement bs = new BoundStatement(SELECT_ALL_CAR_IDS);
-		bs.bind(carClass);
+		BoundStatement bs = SELECT_ALL_CAR_IDS.bind(carClass);
 		ResultSet rs = null;
 		try {
 			rs = session.execute(bs);
@@ -183,7 +174,7 @@ public class BackendSession {
 	protected void finalize() {
 		try {
 			if (session != null) {
-				session.getCluster().close();
+				session.close();
 			}
 		} catch (Exception e) {
 			logger.error("Could not close existing cluster", e);

@@ -1,7 +1,7 @@
 x-cassandra-common: &cassandra-common
   image: cassandra:latest
   environment:
-    - CASSANDRA_CLUSTER_NAME=DistributedCarRentalCluster
+    - CASSANDRA_CLUSTER_NAME=datacenter1
     - CASSANDRA_SEEDS=cassandra-1,cassandra-2,cassandra-3
     - MAX_HEAP_SIZE=2048M
   healthcheck:
