@@ -3,36 +3,25 @@ CREATE KEYSPACE IF NOT EXISTS Test
 
 USE Test;
 
-CREATE TABLE Users (
-  companyName varchar,
-  name varchar,
-  phone int,
-  street varchar,
-  pets list<varchar>,
-  PRIMARY KEY (companyName, name)
-);
+CREATE TABLE rentalLog (
+  dateFrom date,
+  renterId uuid,
+  dateTo date,
+  carClass text,
+  PRIMARY KEY (dateFrom, renterId)
+  );
 
-CREATE INDEX streetIndex ON Users (street);
+CREATE TABLE carRentals (
+  carId int,
+  renterId uuid,
+  PRIMARY KEY (carId)
+  );
 
-CREATE TABLE MeteoData (
-  stationName varchar, 
-  measurement timestamp, 
-  temperature double,
-  pressure double,
-  PRIMARY KEY (stationName, measurement)
-);
-
-CREATE TABLE MeteoData2 (
-  stationName varchar, 
-  mDay varchar,
-  measurement timestamp, 
-  temperature double,
-  pressure double,
-  PRIMARY KEY ((stationName, mDay), measurement)
-);
-
-CREATE TABLE PageViewCounts (
-  url varchar,
-  views counter,
-  PRIMARY KEY(url)
-);
+CREATE TABLE carHistory (
+  carId int,
+  dateFrom date,
+  dateTo date,
+  dateReceived date,
+  renterId UUID,
+  PRIMARY KEY (carId, dateFrom, dateTo)
+  );
