@@ -2,13 +2,10 @@ package cassdemo;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
-import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
+import cassdemo.backend.Car;
 import cassdemo.backend.RentalLog;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -85,15 +82,19 @@ public class Main {
                     }
                     ArrayList<RentalLog> rentalLogs = session.selectRentals(LocalDate.parse(parts[1]), UUID.fromString(parts[2]));
                     for (RentalLog rL : rentalLogs){
-                        List<Integer> toCheck = session.getCarIds(rL.getCarClass());
-                        for (Integer carId : toCheck){
-                            if(session.getCarsRentalId(carId)==null){
-                                if (session.rentCar(carId, UUID.fromString(parts[2]))){
+                        int carClassIndex = Car.getCarClasses().indexOf(rL.getCarClass());
+                        ListIterator<String> iterator = Car.getCarClasses().listIterator(carClassIndex);
+                        while (iterator.hasNext()) {
+                            String currentOption = iterator.next();
+
+                            List<Integer> toCheck = session.getCarIds(currentOption);
+                            for (Integer carId : toCheck) {
+                                if (session.rentCar(carId, UUID.fromString(parts[2]))) {
+                                    System.out.println("Your car is "+session.getCarDetails(carId));
                                     break;
                                 }
                             }
                         }
-                        //todo more than one car class
                     }
                     break;
                 case "ret":
@@ -104,7 +105,10 @@ public class Main {
                     }
                     session.returnCar(Integer.getInteger(parts[1]), LocalDate.parse(parts[2]), LocalDate.parse(parts[3]), LocalDate.parse(parts[4]));
                     break;
-
+                case "fill":
+                    session.fillAvailableCars();
+                    System.out.println("Available cars refilled for 30 days.");
+                    break;
                 default:
                     System.out.println("Unknown command: " + command);
             }

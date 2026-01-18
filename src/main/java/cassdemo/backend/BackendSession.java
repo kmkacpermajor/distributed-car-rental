@@ -54,10 +54,14 @@ public class BackendSession {
 	private static PreparedStatement CHECK_CARS_RENTAL_ID;
 	private static PreparedStatement TRY_RENTING_CAR;
 	private static PreparedStatement ADD_RENTAL_TO_HISTORY;
-	private static PreparedStatement RETURN_CAR;
 	private static PreparedStatement SELECT_ALL_CAR_IDS;
 	private static PreparedStatement ADD_TO_AVAILABLE_CARS;
 	private static PreparedStatement DECREASE_FROM_AVAILABLE_CARS;
+	private static PreparedStatement UPDATE_DATE_RECEIVED;
+    private static PreparedStatement SELECT_ALL_CAR_IDS;
+    private static PreparedStatement SELECT_CAR_DETAILS;
+    private static PreparedStatement UPDATE_AVAILABLE_CARS;
+    private static PreparedStatement DELETE_CURRENT_CAR_RENTAL;
 
 //	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
 //	// private static final SimpleDateFormat df = new
@@ -72,12 +76,14 @@ public class BackendSession {
 			CHECK_CARS_RENTAL_ID = session.prepare("SELECT rentalId FROM carRentals WHERE carId = ?");
 			TRY_RENTING_CAR = session.prepare("UPDATE carRentals SET rentalId = ? WHERE carId = ? IF rentalId = null");
 			ADD_RENTAL_TO_HISTORY = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId) VALUES (?,?,?,?)");
-			RETURN_CAR = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, dateReceived) VALUES (?,?,?,?)");
 			SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
 			ADD_TO_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count + ? WHERE date = ? AND rentalId = ?");
 			DECREASE_FROM_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count - ? WHERE date = ? AND rentalId = ?");
-
-		} catch (Exception e) {
+		    UPDATE_DATE_RECEIVED = session.prepare("UPDATE carHistory SET dateReceived = ? WHERE carId = ? AND dateFrom = ? AND dateTo = ?");
+            SELECT_CAR_DETAILS = session.prepare("SELECT carId, carName, carClass, licensePlate FROM carDetails WHERE carId = ?");
+            UPDATE_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count + ? WHERE date = ? AND carClass = ?");
+            DELETE_CURRENT_CAR_RENTAL = session.prepare("DELETE FROM carRental WHERE carId = ?");
+        } catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
 
@@ -193,10 +199,11 @@ public class BackendSession {
 	}
 
 	public void returnCar(int carId, LocalDate dateFrom, LocalDate dateTo, LocalDate dateReceived) throws BackendException{
-		BoundStatement bs = RETURN_CAR.bind(carId, dateFrom, dateTo, dateReceived);
-		ResultSet rs = null;
+		BoundStatement bs1 = DELETE_CURRENT_CAR_RENTAL.bind(carId);
+        BoundStatement bs2 = UPDATE_DATE_RECEIVED.bind(dateReceived, carId, dateFrom, dateTo);
 		try{
-			rs = session.execute(bs);
+            session.execute(bs1);
+            session.execute(bs2);
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
@@ -213,6 +220,32 @@ public class BackendSession {
 		}
 		return rs.one().getList("carIdList", Integer.class);
 	}
+
+    public Car getCarDetails(Integer carId) throws BackendException{
+        BoundStatement bs = SELECT_CAR_DETAILS.bind(carId);
+        ResultSet rs = null;
+        try {
+            rs = session.execute(bs);
+        }catch (Exception e){
+            throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
+        }
+
+        Row row = rs.one();
+
+        return new Car(row.getInt("carId"), row.getString("carName"), row.getString("carClass"), row.getString("licensePlate"));
+    }
+
+    public void fillAvailableCars() throws BackendException{
+        int daysInAdvance = 30;
+
+        for (String carClass : Car.getCarClasses()){
+            int count = getCarIds(carClass).size();
+            for (int i = 0; i < daysInAdvance; i++){
+                LocalDate date = LocalDate.now().plusDays(i);
+                BoundStatement bs = UPDATE_AVAILABLE_CARS.bind(count, date, carClass);
+            }
+        }
+    }
 
 	protected void finalize() {
 		try {
