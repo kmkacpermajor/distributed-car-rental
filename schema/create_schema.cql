@@ -4,27 +4,36 @@ CREATE KEYSPACE IF NOT EXISTS Test
 USE Test;
 
 CREATE TABLE rentalLog (
-  dateFrom date,
-  renterId uuid,
-  dateTo date,
-  carClass text,
-  PRIMARY KEY (dateFrom, renterId)
-  );
+    dateFrom date,
+    renterId uuid,
+    rentalId uuid,
+    dateTo date,
+    carClass text,
+    PRIMARY KEY (dateFrom, renterId, rentalId)
+);
 
-CREATE TABLE carRentals (
-  carId int,
-  renterId uuid,
-  PRIMARY KEY (carId)
-  );
+CREATE TABLE rentalState (
+   date date,
+   carClass text,
+   rentalId uuid,
+   PRIMARY KEY (date, carClass, rentalId)
+);
+
+CREATE TABLE availableCars (
+    date date,
+    carClass text,
+    count counter,
+    PRIMARY KEY ( date, carClass )
+);
 
 CREATE TABLE carHistory (
-  carId int,
-  dateFrom date,
-  dateTo date,
-  dateReceived date,
-  renterId uuid,
-  PRIMARY KEY (carId, dateFrom, dateTo)
-  );
+    carId int,
+    dateFrom date,
+    dateTo date,
+    dateReceived date,
+    renterId uuid,
+    PRIMARY KEY (carId, dateFrom, dateTo)
+);
 
 CREATE TABLE carDetails (
     carId int PRIMARY KEY,
@@ -38,57 +47,63 @@ CREATE TABLE carClasses (
     carIdList list<int>
 );
 
-INSERT INTO carRentals (carId, renterId) VALUES (0, null);
-INSERT INTO carRentals (carId, renterId) VALUES (1, null);
-INSERT INTO carRentals (carId, renterId) VALUES (2, null);
-INSERT INTO carRentals (carId, renterId) VALUES (3, null);
-INSERT INTO carRentals (carId, renterId) VALUES (4, null);
-INSERT INTO carRentals (carId, renterId) VALUES (5, null);
-INSERT INTO carRentals (carId, renterId) VALUES (6, null);
-INSERT INTO carRentals (carId, renterId) VALUES (7, null);
-INSERT INTO carRentals (carId, renterId) VALUES (8, null);
-INSERT INTO carRentals (carId, renterId) VALUES (9, null);
-INSERT INTO carRentals (carId, renterId) VALUES (10, null);
-INSERT INTO carRentals (carId, renterId) VALUES (11, null);
-INSERT INTO carRentals (carId, renterId) VALUES (12, null);
-INSERT INTO carRentals (carId, renterId) VALUES (13, null);
-INSERT INTO carRentals (carId, renterId) VALUES (14, null);
-INSERT INTO carRentals (carId, renterId) VALUES (15, null);
-INSERT INTO carRentals (carId, renterId) VALUES (16, null);
-INSERT INTO carRentals (carId, renterId) VALUES (17, null);
-INSERT INTO carRentals (carId, renterId) VALUES (18, null);
-INSERT INTO carRentals (carId, renterId) VALUES (19, null);
-INSERT INTO carRentals (carId, renterId) VALUES (20, null);
-INSERT INTO carRentals (carId, renterId) VALUES (21, null);
-INSERT INTO carRentals (carId, renterId) VALUES (22, null);
-INSERT INTO carRentals (carId, renterId) VALUES (23, null);
-INSERT INTO carRentals (carId, renterId) VALUES (24, null);
-INSERT INTO carRentals (carId, renterId) VALUES (25, null);
-INSERT INTO carRentals (carId, renterId) VALUES (26, null);
-INSERT INTO carRentals (carId, renterId) VALUES (27, null);
-INSERT INTO carRentals (carId, renterId) VALUES (28, null);
-INSERT INTO carRentals (carId, renterId) VALUES (29, null);
-INSERT INTO carRentals (carId, renterId) VALUES (30, null);
-INSERT INTO carRentals (carId, renterId) VALUES (31, null);
-INSERT INTO carRentals (carId, renterId) VALUES (32, null);
-INSERT INTO carRentals (carId, renterId) VALUES (33, null);
-INSERT INTO carRentals (carId, renterId) VALUES (34, null);
-INSERT INTO carRentals (carId, renterId) VALUES (35, null);
-INSERT INTO carRentals (carId, renterId) VALUES (36, null);
-INSERT INTO carRentals (carId, renterId) VALUES (37, null);
-INSERT INTO carRentals (carId, renterId) VALUES (38, null);
-INSERT INTO carRentals (carId, renterId) VALUES (39, null);
-INSERT INTO carRentals (carId, renterId) VALUES (40, null);
-INSERT INTO carRentals (carId, renterId) VALUES (41, null);
-INSERT INTO carRentals (carId, renterId) VALUES (42, null);
-INSERT INTO carRentals (carId, renterId) VALUES (43, null);
-INSERT INTO carRentals (carId, renterId) VALUES (44, null);
-INSERT INTO carRentals (carId, renterId) VALUES (45, null);
-INSERT INTO carRentals (carId, renterId) VALUES (46, null);
-INSERT INTO carRentals (carId, renterId) VALUES (47, null);
-INSERT INTO carRentals (carId, renterId) VALUES (48, null);
-INSERT INTO carRentals (carId, renterId) VALUES (49, null);
-INSERT INTO carRentals (carId, renterId) VALUES (50, null);
+CREATE TABLE carRentals (
+    carId int,
+    rentalId uuid,
+    PRIMARY KEY (carId)
+);
+
+INSERT INTO carRentals (carId, rentalId) VALUES (0, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (1, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (2, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (3, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (4, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (5, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (6, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (7, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (8, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (9, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (10, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (11, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (12, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (13, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (14, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (15, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (16, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (17, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (18, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (19, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (20, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (21, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (22, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (23, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (24, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (25, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (26, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (27, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (28, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (29, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (30, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (31, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (32, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (33, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (34, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (35, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (36, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (37, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (38, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (39, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (40, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (41, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (42, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (43, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (44, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (45, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (46, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (47, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (48, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (49, null);
+INSERT INTO carRentals (carId, rentalId) VALUES (50, null);
 
 INSERT INTO carDetails (carId, carName, carClass, licensePlate) VALUES (0, 'Audi A3', 'C', 'PO 1284A');
 INSERT INTO carDetails (carId, carName, carClass, licensePlate) VALUES (1, 'Volkswagen Golf', 'C', 'PO 7721X');
@@ -149,3 +164,11 @@ INSERT INTO carClasses (carClass, carIdList) VALUES ('D', [2, 3, 7, 12, 19, 33, 
 INSERT INTO carClasses (carClass, carIdList) VALUES ('E', [17, 20, 48]);
 INSERT INTO carClasses (carClass, carIdList) VALUES ('F', [10, 11, 18, 21, 26, 41, 42, 49]);
 INSERT INTO carClasses (carClass, carIdList) VALUES ('S', [8, 28, 39]);
+
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'A', 2+1);
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'B', 9+2);
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'C', 16+3);
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'C', 10+2);
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'E', 3+1);
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'F', 8+2);
+INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'S', 3+1);
