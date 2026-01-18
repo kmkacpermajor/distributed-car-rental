@@ -4,9 +4,7 @@ import java.net.InetSocketAddress;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import org.slf4j.Logger;
@@ -16,6 +14,8 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+
+import static cassdemo.backend.BackendSession.Query.*;
 
 /*
  * For error handling done right see: 
@@ -34,6 +34,29 @@ public class BackendSession {
 
 	private CqlSession session;
 
+    public enum Query {
+        SELECT_AVAILABLE_CARS("SELECT count FROM availableCars WHERE date = :date AND carClass = :carClass"),
+        MAKE_A_RESERVATION("INSERT INTO rentalLog (dateFrom, renterId, rentalId, dateTo, carClass) VALUES (?, ?, ?, ?, ?)"),
+        DELETE_RESERVATION ("DELETE FROM rentalLog WHERE dateFrom = ? AND renterId = ? AND rentalId = ?"),
+        SELECT_TODAYS_CLIENTS_RENTALS("SELECT * FROM rentalLog WHERE dateFrom = ? AND renterId = ?"),
+        CHECK_CARS_RENTAL_ID("SELECT rentalId FROM carRentals WHERE carId = ?"),
+        TRY_RENTING_CAR("UPDATE carRentals SET rentalId = ? WHERE carId = ? IF rentalId = null"),
+        ADD_RENTAL_TO_HISTORY("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId, rentalId) VALUES (?,?,?,?,?)"),
+        SELECT_ALL_CAR_IDS("SELECT carIdList FROM carClasses WHERE carClass = ?"),
+        ADD_TO_AVAILABLE_CARS("UPDATE availableCars SET count = count + :count WHERE date = :date AND carClass = :carClass"),
+        DECREASE_FROM_AVAILABLE_CARS("UPDATE availableCars SET count = count - :count WHERE date = :date AND carClass = :carClass"),
+        UPDATE_DATE_RECEIVED("UPDATE carHistory SET dateReceived = ? WHERE carId = ? AND dateFrom = ? AND dateTo = ?"),
+        SELECT_CAR_DETAILS("SELECT carId, carName, carClass, licensePlate FROM carDetails WHERE carId = ?"),
+        DELETE_CURRENT_CAR_RENTAL("DELETE FROM carRentals WHERE carId = ?");
+
+        public final String cql;
+        Query(String cql) {
+            this.cql = cql;
+        }
+    }
+
+    private final EnumMap<Query, PreparedStatement> statements = new EnumMap<>(Query.class);
+
 	public BackendSession(String contactPointIP, String keyspace) throws BackendException {
 
 		try {
@@ -45,85 +68,60 @@ public class BackendSession {
 		} catch (Exception e) {
 			throw new BackendException("Could not connect to the cluster. " + e.getMessage() + ".", e);
 		}
-		prepareStatements();
-	}
-	private static PreparedStatement SELECT_AVAILABLE_CARS;
-	private static PreparedStatement MAKE_A_RESERVATION;
-	private static PreparedStatement DELETE_RESERVATION;
-	private static PreparedStatement SELECT_TODAYS_CLIENTS_RENTALS;
-	private static PreparedStatement CHECK_CARS_RENTAL_ID;
-	private static PreparedStatement TRY_RENTING_CAR;
-	private static PreparedStatement ADD_RENTAL_TO_HISTORY;
-	private static PreparedStatement SELECT_ALL_CAR_IDS;
-	private static PreparedStatement ADD_TO_AVAILABLE_CARS;
-	private static PreparedStatement DECREASE_FROM_AVAILABLE_CARS;
-	private static PreparedStatement UPDATE_DATE_RECEIVED;
-    private static PreparedStatement SELECT_CAR_DETAILS;
-    private static PreparedStatement UPDATE_AVAILABLE_CARS;
-    private static PreparedStatement DELETE_CURRENT_CAR_RENTAL;
-
-//	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
-//	// private static final SimpleDateFormat df = new
-//	// SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-	private void prepareStatements() throws BackendException {
-		try {
-			SELECT_AVAILABLE_CARS = session.prepare("SELECT count FROM availableCars WHERE date = ? AND carClass = ?");
-			MAKE_A_RESERVATION = session.prepare("INSERT INTO rentalLog (dateFrom, renterId, rentalId, dateTo, carClass) VALUES (?, ?, ?, ?, ?)");
-			DELETE_RESERVATION = session.prepare("DELETE FROM rentalLog WHERE dateFrom = ? AND renterId = ? AND rentalId = ?");
-			SELECT_TODAYS_CLIENTS_RENTALS = session.prepare("SELECT * FROM rentalLog WHERE dateFrom = ? AND renterId = ?");
-			CHECK_CARS_RENTAL_ID = session.prepare("SELECT rentalId FROM carRentals WHERE carId = ?");
-			TRY_RENTING_CAR = session.prepare("UPDATE carRentals SET rentalId = ? WHERE carId = ? IF rentalId = null");
-			ADD_RENTAL_TO_HISTORY = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId) VALUES (?,?,?,?)");
-			SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
-			ADD_TO_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count + ? WHERE date = ? AND rentalId = ?");
-			DECREASE_FROM_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count - ? WHERE date = ? AND rentalId = ?");
-		    UPDATE_DATE_RECEIVED = session.prepare("UPDATE carHistory SET dateReceived = ? WHERE carId = ? AND dateFrom = ? AND dateTo = ?");
-            SELECT_CAR_DETAILS = session.prepare("SELECT carId, carName, carClass, licensePlate FROM carDetails WHERE carId = ?");
-            UPDATE_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count + ? WHERE date = ? AND carClass = ?");
-            DELETE_CURRENT_CAR_RENTAL = session.prepare("DELETE FROM carRental WHERE carId = ?");
-        } catch (Exception e) {
-			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
-		}
-
-		logger.info("Statements prepared");
+        for (Query q : Query.values()) {
+            statements.put(q, session.prepare(q.cql));
+            logger.info("Statements prepared");
+        }
 	}
 
-	public boolean reserveRental(LocalDate dateFrom, UUID renterId, UUID rentalId, LocalDate dateTo, String carClass) throws BackendException{
+	public UUID reserveRental(LocalDate dateFrom, UUID renterId, LocalDate dateTo, String carClass) throws BackendException{
 		LocalDate localDate = LocalDate.now();
-		if (!dateTo.isAfter(dateFrom) || localDate.isBefore(dateFrom) || localDate.plusDays(30).isBefore(dateTo)) return false;
-		BoundStatement bs1 = SELECT_AVAILABLE_CARS.bind(dateFrom, carClass);
+        UUID rentalId = UUID.randomUUID();
+
+        if (!dateTo.isAfter(dateFrom)) {
+            throw new BackendException("Invalid date range. Date range must be between today and 30 days from today.");
+        }
+		if (dateFrom.isBefore(localDate) || dateTo.isAfter(localDate.plusDays(30))) {
+            throw new BackendException("Invalid date range. Date range must be between today and 30 days from today.");
+        }
+
+		BoundStatement bs1 = statements.get(SELECT_AVAILABLE_CARS).bind().setString("carClass", carClass);
 		long dayCount = dateFrom.until(dateTo, ChronoUnit.DAYS);
-		for (int i = 0;i>dayCount;i++) {
-			bs1 = bs1.setLocalDate("date", dateFrom.plusDays(i));
+		for (int i = 0;i<=dayCount;i++) {
+			BoundStatement bs = bs1.setLocalDate("date", dateFrom.plusDays(i));
+            long count = 0;
 			try{
-				if(session.execute(bs1).one().getLong("count")<=0){
-					return false;
-				}
+                Row row = session.execute(bs).one();
+                if (row == null) throw new BackendException("There are no cars in system. You should run \"fill\"");
+
+                count = row.getLong("count");
 			} catch (Exception e){
 				throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 			}
+            if(count<=0){
+                throw new BackendException("Not enough cars available for this reservation");
+            }
 		}
-		BoundStatement bs2 = MAKE_A_RESERVATION.bind(dateFrom, renterId, rentalId, dateTo, carClass);
+		BoundStatement bs2 = statements.get(MAKE_A_RESERVATION).bind(dateFrom, renterId, rentalId, dateTo, carClass);
 		try{
 			session.execute(bs2);
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
-		BoundStatement bs3 = DECREASE_FROM_AVAILABLE_CARS.bind(1, dateFrom, carClass);
-		for (int i = 0;i>dayCount;i++) {
-			bs3 = bs3.setLocalDate("date", dateFrom.plusDays(i));
+		BoundStatement bs3 = statements.get(DECREASE_FROM_AVAILABLE_CARS).bind().setLong("count", 1L).setString("carClass", carClass);
+		for (int i = 0;i<=dayCount;i++) {
+			BoundStatement bs = bs3.setLocalDate("date", dateFrom.plusDays(i));
 			try {
-				session.execute(bs3);
+				session.execute(bs);
 			} catch (Exception e) {
 				throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 			}
 		}
-		return true;
+        return rentalId;
 	}
 
 	public void deleteReservation(LocalDate dateFrom, UUID renterId, UUID rentalId, LocalDate dateTo, String carClass) throws BackendException{
-		BoundStatement bs1 = ADD_TO_AVAILABLE_CARS.bind(1, dateFrom, carClass);
+		BoundStatement bs1 = statements.get(ADD_TO_AVAILABLE_CARS).bind(1L, dateFrom, carClass);
 		long dayCount = dateFrom.until(dateTo, ChronoUnit.DAYS);
 		for (int i = 0;i>dayCount;i++) {
 			bs1 = bs1.setLocalDate("date", dateFrom.plusDays(i));
@@ -133,7 +131,7 @@ public class BackendSession {
 				throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 			}
 		}
-		BoundStatement bs2 = DELETE_RESERVATION.bind(dateFrom, renterId, rentalId, dateTo, carClass);
+		BoundStatement bs2 = statements.get(DELETE_RESERVATION).bind(dateFrom, renterId, rentalId, dateTo, carClass);
 		try{
 			session.execute(bs2);
 		} catch (Exception e){
@@ -143,7 +141,7 @@ public class BackendSession {
 	}
 
 	public ArrayList<RentalLog> selectRentals(LocalDate dateFrom, UUID renterId) throws BackendException{
-		BoundStatement bs = SELECT_TODAYS_CLIENTS_RENTALS.bind(dateFrom, renterId);
+		BoundStatement bs = statements.get(SELECT_TODAYS_CLIENTS_RENTALS).bind(dateFrom, renterId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
@@ -153,10 +151,10 @@ public class BackendSession {
 		ArrayList<RentalLog> rentals = new ArrayList<>();
 		for (Row row : rs){
 			RentalLog rentalLog = new RentalLog.Builder()
-					.dateFrom(LocalDate.parse(row.getString("dateFrom")))
+					.dateFrom(row.getLocalDate("dateFrom"))
 					.renterId(row.get("renterId", UUID.class))
 					.rentalId(row.get("rentalId", UUID.class))
-					.dateTo(LocalDate.parse(row.getString("dateTo")))
+					.dateTo(row.getLocalDate("dateTo"))
 					.carClass(row.getString("carClass"))
 					.build();
 			rentals.add(rentalLog);
@@ -165,7 +163,7 @@ public class BackendSession {
 	}
 
 	public UUID getCarsRentalId(int carId) throws BackendException{
-		BoundStatement bs = CHECK_CARS_RENTAL_ID.bind(carId);
+		BoundStatement bs = statements.get(CHECK_CARS_RENTAL_ID).bind(carId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
@@ -175,8 +173,25 @@ public class BackendSession {
 		return rs.one().get("rentalId", UUID.class);
 	}
 
+    public Car rentLog(RentalLog rL, UUID renterId) throws BackendException{
+        int carClassIndex = Car.getCarClasses().indexOf(rL.getCarClass());
+        ListIterator<String> iterator = Car.getCarClasses().listIterator(carClassIndex);
+        while (iterator.hasNext()) {
+            String currentOption = iterator.next();
+
+            List<Integer> toCheck = getCarIds(currentOption);
+            for (Integer carId : toCheck) {
+                if (rentCar(carId, renterId)) {
+                    addRentalToHistory(carId, rL.getDateFrom(), rL.getDateTo(), renterId, rL.getRentalId());
+                    return getCarDetails(carId);
+                }
+            }
+        }
+        throw new BackendException("No cars available for rental.");
+    }
+
 	public boolean rentCar(int carId, UUID rentalId) throws BackendException{
-		BoundStatement bs = TRY_RENTING_CAR.bind(rentalId, carId);
+		BoundStatement bs = statements.get(TRY_RENTING_CAR).bind(rentalId, carId);
 		ResultSet rs = null;
 		try{
 			rs = session.execute(bs);
@@ -186,8 +201,8 @@ public class BackendSession {
 		return rs.one().getBool("[applied]");
 	}
 
-	public void addRentalToHistory(int carId, LocalDate dateFrom, LocalDate dateTo, UUID renterId) throws BackendException{
-		BoundStatement bs = ADD_RENTAL_TO_HISTORY.bind(carId, dateFrom, dateTo, renterId);
+	public void addRentalToHistory(int carId, LocalDate dateFrom, LocalDate dateTo, UUID renterId, UUID rentalId) throws BackendException{
+		BoundStatement bs = statements.get(ADD_RENTAL_TO_HISTORY).bind(carId, dateFrom, dateTo, renterId, rentalId);
 		ResultSet rs = null;
 		try {
 			rs = session.execute(bs);
@@ -198,8 +213,8 @@ public class BackendSession {
 	}
 
 	public void returnCar(int carId, LocalDate dateFrom, LocalDate dateTo, LocalDate dateReceived) throws BackendException{
-		BoundStatement bs1 = DELETE_CURRENT_CAR_RENTAL.bind(carId);
-        BoundStatement bs2 = UPDATE_DATE_RECEIVED.bind(dateReceived, carId, dateFrom, dateTo);
+		BoundStatement bs1 = statements.get(DELETE_CURRENT_CAR_RENTAL).bind(carId);
+        BoundStatement bs2 = statements.get(UPDATE_DATE_RECEIVED).bind(dateReceived, carId, dateFrom, dateTo);
 		try{
             session.execute(bs1);
             session.execute(bs2);
@@ -210,7 +225,7 @@ public class BackendSession {
 	}
 
 	public List<Integer> getCarIds(String carClass) throws BackendException{
-		BoundStatement bs = SELECT_ALL_CAR_IDS.bind(carClass);
+		BoundStatement bs = statements.get(SELECT_ALL_CAR_IDS).bind(carClass);
 		ResultSet rs = null;
 		try {
 			rs = session.execute(bs);
@@ -221,7 +236,7 @@ public class BackendSession {
 	}
 
     public Car getCarDetails(Integer carId) throws BackendException{
-        BoundStatement bs = SELECT_CAR_DETAILS.bind(carId);
+        BoundStatement bs = statements.get(SELECT_CAR_DETAILS).bind(carId);
         ResultSet rs = null;
         try {
             rs = session.execute(bs);
@@ -238,10 +253,15 @@ public class BackendSession {
         int daysInAdvance = 30;
 
         for (String carClass : Car.getCarClasses()){
-            int count = getCarIds(carClass).size();
+            long count = getCarIds(carClass).size();
             for (int i = 0; i < daysInAdvance; i++){
                 LocalDate date = LocalDate.now().plusDays(i);
-                BoundStatement bs = UPDATE_AVAILABLE_CARS.bind(count, date, carClass);
+                BoundStatement bs = statements.get(ADD_TO_AVAILABLE_CARS).bind(count, date, carClass);
+                try {
+                    session.execute(bs);
+                }catch (Exception e){
+                    throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
+                }
             }
         }
     }

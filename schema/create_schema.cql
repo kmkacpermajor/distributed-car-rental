@@ -25,6 +25,7 @@ CREATE TABLE carHistory (
     dateTo date,
     dateReceived date,
     renterId uuid,
+    rentalId uuid,
     PRIMARY KEY (carId, dateFrom, dateTo)
 );
 

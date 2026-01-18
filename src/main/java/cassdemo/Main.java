@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
+import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
 import cassdemo.backend.Car;
 import cassdemo.backend.RentalLog;
@@ -52,48 +53,45 @@ public class Main {
                 case "addC":
                 case "addClient":
                     UUID uuid = UUID.randomUUID();
-                    System.out.println("your uuid is: "+ uuid);
+                    System.out.println("Your RenterId is: "+ uuid);
                     break;
                 case "res":
                 case "reserve":
                     if(parts.length<5){
-                        System.out.println("wrong input for reservation");
+                        System.out.println("Invalid reserve command. Usage: reserve <dateFrom> <clientId> <dateTo> <carClass>");
                         break;
                     }
-                    UUID rentalId = UUID.randomUUID();
-                    if(!session.reserveRental(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), rentalId, LocalDate.parse(parts[3]), parts[4])){
-                        System.out.println("something went wrong with your reservation please try again");
-                    } else {
-                        System.out.println("your reservation has completed, your RentalId is: " + rentalId);
+                    try{
+                        UUID rentalId = session.reserveRental(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), LocalDate.parse(parts[3]), parts[4]);
+                        System.out.println("Your reservation has completed, your RentalId is: " + rentalId);
+                    }catch (BackendException e) {
+                        System.out.println("Could not reserve rental: " + e.getMessage());
                     }
+
                     break;
                 case "del":
                 case "deleteReservation":
                     if(parts.length<6){
-                        System.out.println("wrong input for reservation");
+                        System.out.println("Invalid deleteReservation command. Usage: deleteReservation <dateFrom> <clientId> <rentalId> <dateTo> <carClass>");
                         break;
                     }
                     session.deleteReservation(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), UUID.fromString(parts[3]), LocalDate.parse(parts[4]), parts[5]);
                     break;
-                case "rentAll":
+                case "rentAll": // co jesli klient przyjdzie dwa razy (puscimy rentAll z tymi samymi argumentami)
                     if(parts.length<3){
-                        System.out.println("wrong input for reservation");
+                        System.out.println("Invalid rentAll command. Usage: rentAll <date> <clientId>");
                         break;
                     }
                     ArrayList<RentalLog> rentalLogs = session.selectRentals(LocalDate.parse(parts[1]), UUID.fromString(parts[2]));
                     for (RentalLog rL : rentalLogs){
-                        int carClassIndex = Car.getCarClasses().indexOf(rL.getCarClass());
-                        ListIterator<String> iterator = Car.getCarClasses().listIterator(carClassIndex);
-                        while (iterator.hasNext()) {
-                            String currentOption = iterator.next();
-
-                            List<Integer> toCheck = session.getCarIds(currentOption);
-                            for (Integer carId : toCheck) {
-                                if (session.rentCar(carId, UUID.fromString(parts[2]))) {
-                                    System.out.println("Your car is "+session.getCarDetails(carId));
-                                    break;
-                                }
+                        try{
+                            Car rentedCar = session.rentLog(rL, UUID.fromString(parts[2]));
+                            if (!rentedCar.getCarClass().equals(rL.getCarClass())){
+                                System.out.println("Car class upgraded. Expected: " + rL.getCarClass() + ", got: " + rentedCar.getCarClass());
                             }
+                            System.out.println("Rented car: " + rentedCar);
+                        } catch (BackendException e) {
+                            System.out.println("There are no better class cars available: " + e.getMessage());
                         }
                     }
                     break;
