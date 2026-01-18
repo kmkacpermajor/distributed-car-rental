@@ -164,11 +164,3 @@ INSERT INTO carClasses (carClass, carIdList) VALUES ('D', [2, 3, 7, 12, 19, 33, 
 INSERT INTO carClasses (carClass, carIdList) VALUES ('E', [17, 20, 48]);
 INSERT INTO carClasses (carClass, carIdList) VALUES ('F', [10, 11, 18, 21, 26, 41, 42, 49]);
 INSERT INTO carClasses (carClass, carIdList) VALUES ('S', [8, 28, 39]);
-
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'A', 2+1);
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'B', 9+2);
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'C', 16+3);
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'C', 10+2);
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'E', 3+1);
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'F', 8+2);
-INSERT INTO availableCars (date, carClass, count) VALUES (now(), 'S', 3+1);

@@ -52,7 +52,9 @@ public class BackendSession {
 	private static PreparedStatement TRY_RENTING_CAR;
 	private static PreparedStatement ADD_RENTAL_TO_HISTORY;
 	private static PreparedStatement RETURN_CAR;
-	private static PreparedStatement SELECT_ALL_CAR_IDS;
+    private static PreparedStatement SELECT_ALL_CAR_IDS;
+    private static PreparedStatement SELECT_CAR_DETAILS;
+    private static PreparedStatement UPDATE_AVAILABLE_CARS;
 
 //	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
 //	// private static final SimpleDateFormat df = new
@@ -67,8 +69,10 @@ public class BackendSession {
 			TRY_RENTING_CAR = session.prepare("UPDATE carRentals SET renterId = ? WHERE carId = ? IF renterId = null");
 			ADD_RENTAL_TO_HISTORY = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId) VALUES (?,?,?,?)");
 			RETURN_CAR = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, dateReceived) VALUES (?,?,?,?)");
-			SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
-		} catch (Exception e) {
+            SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
+            SELECT_CAR_DETAILS = session.prepare("SELECT carId, carName, carClass, licensePlate FROM carDetails WHERE carId = ?");
+            UPDATE_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count + ? WHERE date = ? AND carClass = ?");
+        } catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
 
@@ -170,6 +174,32 @@ public class BackendSession {
 		}
 		return rs.one().getList("carIdList", Integer.class);
 	}
+
+    public Car getCarDetails(Integer carId) throws BackendException{
+        BoundStatement bs = SELECT_CAR_DETAILS.bind(carId);
+        ResultSet rs = null;
+        try {
+            rs = session.execute(bs);
+        }catch (Exception e){
+            throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
+        }
+
+        Row row = rs.one();
+
+        return new Car(row.getInt("carId"), row.getString("carName"), row.getString("carClass"), row.getString("licensePlate"));
+    }
+
+    public void fillAvailableCars() throws BackendException{
+        int daysInAdvance = 30;
+
+        for (String carClass : Car.getCarClasses()){
+            int count = getCarIds(carClass).size();
+            for (int i = 0; i < daysInAdvance; i++){
+                LocalDate date = LocalDate.now().plusDays(i);
+                BoundStatement bs = UPDATE_AVAILABLE_CARS.bind(count, date, carClass);
+            }
+        }
+    }
 
 	protected void finalize() {
 		try {
