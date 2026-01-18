@@ -84,11 +84,9 @@ public class Main {
 
                             List<Integer> toCheck = session.getCarIds(currentOption);
                             for (Integer carId : toCheck) {
-                                if (session.getCarsRenterId(carId) == null) { // todo może można to pominąć???
-                                    if (session.rentCar(carId, UUID.fromString(parts[2]))) {
-                                        System.out.println("Your car is "+session.getCarDetails(carId));
-                                        break;
-                                    }
+                                if (session.rentCar(carId, UUID.fromString(parts[2]))) {
+                                    System.out.println("Your car is "+session.getCarDetails(carId));
+                                    break;
                                 }
                             }
                         }
