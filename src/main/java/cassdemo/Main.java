@@ -63,15 +63,20 @@ public class Main {
                         System.out.println("wrong input for reservation");
                         break;
                     }
-                    session.reserveRental(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), LocalDate.parse(parts[3]), parts[4]);
+                    UUID rentalId = UUID.randomUUID();
+                    if(!session.reserveRental(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), rentalId, LocalDate.parse(parts[3]), parts[4])){
+                        System.out.println("something went wrong with your reservation please try again");
+                    } else {
+                        System.out.println("your reservation has completed, your RentalId is: " + rentalId);
+                    }
                     break;
                 case "del":
                 case "deleteReservation":
-                    if(parts.length<5){
+                    if(parts.length<6){
                         System.out.println("wrong input for reservation");
                         break;
                     }
-                    session.deleteReservation(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), LocalDate.parse(parts[3]), parts[4]);
+                    session.deleteReservation(LocalDate.parse(parts[1]), UUID.fromString(parts[2]), UUID.fromString(parts[3]), LocalDate.parse(parts[4]), parts[5]);
                     break;
                 case "rentAll":
                     if(parts.length<3){
@@ -82,7 +87,7 @@ public class Main {
                     for (RentalLog rL : rentalLogs){
                         List<Integer> toCheck = session.getCarIds(rL.getCarClass());
                         for (Integer carId : toCheck){
-                            if(session.getCarsRenterId(carId)==null){
+                            if(session.getCarsRentalId(carId)==null){
                                 if (session.rentCar(carId, UUID.fromString(parts[2]))){
                                     break;
                                 }

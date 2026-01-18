@@ -12,13 +12,6 @@ CREATE TABLE rentalLog (
     PRIMARY KEY (dateFrom, renterId, rentalId)
 );
 
-CREATE TABLE rentalState (
-   date date,
-   carClass text,
-   rentalId uuid,
-   PRIMARY KEY (date, carClass, rentalId)
-);
-
 CREATE TABLE availableCars (
     date date,
     carClass text,

@@ -6,12 +6,14 @@ import java.util.UUID;
 public class RentalLog {
     private final LocalDate dateFrom;
     private final UUID renterId;
+    private final UUID rentalId;
     private final LocalDate dateTo;
     private final String carClass;
 
     public RentalLog(Builder builder){
         this.dateFrom = builder.dateFrom;
         this.renterId = builder.renterId;
+        this.rentalId = builder.rentalId;
         this.dateTo = builder.dateTo;
         this.carClass = builder.carClass;
     }
@@ -32,9 +34,14 @@ public class RentalLog {
         return carClass;
     }
 
+    public UUID getRentalId(){
+        return rentalId;
+    }
+
     public static class Builder {
         private LocalDate dateFrom;
         private UUID renterId;
+        private UUID rentalId;
         private LocalDate dateTo;
         private String carClass;
 
@@ -44,6 +51,10 @@ public class RentalLog {
         }
         public Builder renterId(UUID renterId){
             this.renterId = renterId;
+            return this;
+        }
+        public Builder rentalId(UUID rentalId){
+            this.rentalId = rentalId;
             return this;
         }
         public Builder dateTo(LocalDate dateTo){
