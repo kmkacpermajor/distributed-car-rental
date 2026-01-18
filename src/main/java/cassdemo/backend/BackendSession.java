@@ -51,10 +51,11 @@ public class BackendSession {
 	private static PreparedStatement CHECK_CARS_RENTAL_ID;
 	private static PreparedStatement TRY_RENTING_CAR;
 	private static PreparedStatement ADD_RENTAL_TO_HISTORY;
-	private static PreparedStatement RETURN_CAR;
+	private static PreparedStatement UPDATE_DATE_RECEIVED;
     private static PreparedStatement SELECT_ALL_CAR_IDS;
     private static PreparedStatement SELECT_CAR_DETAILS;
     private static PreparedStatement UPDATE_AVAILABLE_CARS;
+    private static PreparedStatement DELETE_CURRENT_CAR_RENTAL;
 
 //	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
 //	// private static final SimpleDateFormat df = new
@@ -68,10 +69,11 @@ public class BackendSession {
 			CHECK_CARS_RENTAL_ID = session.prepare("SELECT renterId FROM carRentals WHERE carId = ?");
 			TRY_RENTING_CAR = session.prepare("UPDATE carRentals SET renterId = ? WHERE carId = ? IF renterId = null");
 			ADD_RENTAL_TO_HISTORY = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, renterId) VALUES (?,?,?,?)");
-			RETURN_CAR = session.prepare("INSERT INTO carHistory (carId, dateFrom, dateTo, dateReceived) VALUES (?,?,?,?)");
+            UPDATE_DATE_RECEIVED = session.prepare("UPDATE carHistory SET dateReceived = ? WHERE carId = ? AND dateFrom = ? AND dateTo = ?");
             SELECT_ALL_CAR_IDS = session.prepare("SELECT carIdList FROM carClasses WHERE carClass = ?");
             SELECT_CAR_DETAILS = session.prepare("SELECT carId, carName, carClass, licensePlate FROM carDetails WHERE carId = ?");
             UPDATE_AVAILABLE_CARS = session.prepare("UPDATE availableCars SET count = count + ? WHERE date = ? AND carClass = ?");
+            DELETE_CURRENT_CAR_RENTAL = session.prepare("DELETE FROM carRental WHERE carId = ?");
         } catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
@@ -154,10 +156,11 @@ public class BackendSession {
 	}
 
 	public void returnCar(int carId, LocalDate dateFrom, LocalDate dateTo, LocalDate dateReceived) throws BackendException{
-		BoundStatement bs = RETURN_CAR.bind(carId, dateFrom, dateTo, dateReceived);
-		ResultSet rs = null;
+		BoundStatement bs1 = DELETE_CURRENT_CAR_RENTAL.bind(carId);
+        BoundStatement bs2 = UPDATE_DATE_RECEIVED.bind(dateReceived, carId, dateFrom, dateTo);
 		try{
-			rs = session.execute(bs);
+            session.execute(bs1);
+            session.execute(bs2);
 		} catch (Exception e){
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
