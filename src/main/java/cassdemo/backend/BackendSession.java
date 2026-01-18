@@ -58,7 +58,6 @@ public class BackendSession {
 	private static PreparedStatement ADD_TO_AVAILABLE_CARS;
 	private static PreparedStatement DECREASE_FROM_AVAILABLE_CARS;
 	private static PreparedStatement UPDATE_DATE_RECEIVED;
-    private static PreparedStatement SELECT_ALL_CAR_IDS;
     private static PreparedStatement SELECT_CAR_DETAILS;
     private static PreparedStatement UPDATE_AVAILABLE_CARS;
     private static PreparedStatement DELETE_CURRENT_CAR_RENTAL;
