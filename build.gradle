@@ -30,6 +30,8 @@ dependencies {
 
     // JLine 3 for the Shell
     implementation 'org.jline:jline:3.25.1'
+
+    implementation 'info.picocli:picocli:4.7.7'
 }
 
 application {

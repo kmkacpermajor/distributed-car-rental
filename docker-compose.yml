@@ -5,7 +5,7 @@ x-cassandra-common: &cassandra-common
     - CASSANDRA_SEEDS=cassandra-1,cassandra-2,cassandra-3
     - MAX_HEAP_SIZE=2048M
   healthcheck:
-    test: ["CMD-SHELL", "nodetool status"]
+    test: ["CMD-SHELL", "[ $$(cqlsh -e \"describe keyspaces\" | grep -c system) -gt 0 ]"]
     interval: 10s
     timeout: 5s
     retries: 10
@@ -34,7 +34,17 @@ services:
     container_name: cassandra-init
     volumes:
       - ./schema:/schema
-    entrypoint: ["cqlsh", "cassandra-1", "-f", "/schema/create_schema.cql"]
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "Waiting for cassandra-1..."
+        until cqlsh cassandra-1 -e "describe keyspaces" > /dev/null 2>&1; do
+          echo "Cassandra is unavailable - sleeping"
+          sleep 2
+        done
+        echo "Cassandra is up - executing script"
+        cqlsh cassandra-1 -f /schema/create_schema.cql
     depends_on:
       cassandra-1:
         condition: service_healthy

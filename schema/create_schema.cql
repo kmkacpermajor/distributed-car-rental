@@ -1,7 +1,7 @@
-CREATE KEYSPACE IF NOT EXISTS Test
+CREATE KEYSPACE IF NOT EXISTS distrental
   WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
 
-USE Test;
+USE distrental;
 
 CREATE TABLE rentalLog (
     dateFrom date,
@@ -46,6 +46,8 @@ CREATE TABLE carRentals (
     rentalId uuid,
     PRIMARY KEY (carId)
 );
+
+USE distrental;
 
 INSERT INTO carRentals (carId, rentalId) VALUES (0, null);
 INSERT INTO carRentals (carId, rentalId) VALUES (1, null);
