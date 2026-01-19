@@ -95,7 +95,7 @@ public class RentalService implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         session.close();
     }
 }
