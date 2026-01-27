@@ -1,3 +1,5 @@
+System wynajmu samochodów
+
 Klient rejestruje się komendą: addc
 
 Klient może wyświetlić listę klas samochodów dostępnych danego dnia komendą: cla
