@@ -94,6 +94,16 @@ public class RentalService implements AutoCloseable {
         }
     }
 
+    public List<String> getAvailableCarClasses(LocalDate date) throws BackendException {
+        List<String> availableClasses = new ArrayList<>();
+        for (String carClass : Car.getCarClasses()) {
+            if (session.getAvailableCarCount(date, carClass) > 0) {
+                availableClasses.add(carClass);
+            }
+        }
+        return availableClasses;
+    }
+
     @Override
     public void close() {
         session.close();

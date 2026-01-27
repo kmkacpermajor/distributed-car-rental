@@ -47,10 +47,10 @@ public class Car {
                 carId +
                 ", carName='" +
                 carName +
-                ", carClass='" +
+                "', carClass='" +
                 carClass +
-                ", licensePlate='" +
+                "', licensePlate='" +
                 licensePlate +
-                ")";
+                "')";
     }
 }

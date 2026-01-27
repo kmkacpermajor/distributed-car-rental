@@ -1,34 +1,10 @@
-CREATE TABLE rentalLog (
-    dateFrom date,
-    rentorId UUID,
-    dateTo date,
-    carClass text,
-);
+Klient rejestruje się komendą: addc
 
-PRIMARY KEY (dateFrom, rentorId);
+Klient może wyświetlić listę klas samochodów dostępnych danego dnia komendą: cla
 
-SELECT * FROM WHERE dateFrom = 'dziś'
+Klient może zarezerwować samochód danej klasy komendą: res
 
-CREATE TABLE carRentals ( - zmieniana w dniu wynajmu
-    carId
-    rentorId Default NULL
-)
-
-PRIMARY KEY carId;
-
-SELECT * FROM rentalLog WHERE carClass
-
-CREATE TABLE carHistory (
-    carId
-    dateFrom
-    dateTo
-    dateReceived
-)
-PRIMARY KEY (carId, dateFrom, dateTo);
+Następnie po przyjściu do firmy, operator wykonuje komendę: rentAll dla klienta, który przyszedł
 
 
-Wynajmując samochód klient dopisuje swój wynajem do rentalLog
-Przychodzi klient do firmy, jeśli jest w rentalLog to wynajmujemy jakiś samochód
-- wybieramy samochody typu carClass, jeśli żaden nie jest dostępny dajemy lepszą itd.
-- po wyborze samochodu próbujemy zmienić rentorId w carRentals na Id klienta - jeśli się powiedzie to dopisujemy do carHistory
-
+Klient może również usunąć swoją rezerwację komendą: del
