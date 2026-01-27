@@ -8,3 +8,10 @@ Następnie po przyjściu do firmy, operator wykonuje komendę: rentAll dla klien
 
 
 Klient może również usunąć swoją rezerwację komendą: del
+
+
+
+`jmeter -n \
+  -t rental-stress.jmx \
+  -l bin/jmeter/results.jtl \
+  -e -o bin/jmeter/report`

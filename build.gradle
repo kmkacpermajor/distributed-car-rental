@@ -9,7 +9,6 @@ version = '1.0-SNAPSHOT'
 description = 'CassandraDemo'
 
 java {
-    // Upgraded to Java 17
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
@@ -23,19 +22,24 @@ repositories {
 }
 
 dependencies {
+    // ... existing code ...
     implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'ch.qos.logback:logback-classic:1.5.13'
 
     implementation 'com.datastax.oss:java-driver-core:4.17.0'
-
-    // JLine 3 for the Shell
     implementation 'org.jline:jline:3.25.1'
-
     implementation 'info.picocli:picocli:4.7.7'
+
+    // --- HTTP API (Spring) ---
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.2.12')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // --- Swagger / OpenAPI UI ---
 }
 
 application {
-    mainClass = 'cassdemo.Main'
+    mainClass = 'cassdemo.Main' // keep CLI as default
 }
 
 layout.buildDirectory.set(file('bin'))
@@ -43,6 +47,20 @@ layout.buildDirectory.set(file('bin'))
 tasks.withType(JavaExec).configureEach {
     standardInput = System.in
 
+    if (project.hasProperty('myargs')) {
+        args(myargs.split(' ').collect { it.trim() })
+    }
+}
+
+// Run the HTTP API without replacing the CLI entrypoint
+tasks.register('runApi', JavaExec) {
+    group = 'application'
+    description = 'Run the HTTP API (Spring embedded server)'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'cassdemo.api.ApiMain'
+
+    // Allow passing args: ./gradlew runApi -Pmyargs="--server.port=8080"
     if (project.hasProperty('myargs')) {
         args(myargs.split(' ').collect { it.trim() })
     }
